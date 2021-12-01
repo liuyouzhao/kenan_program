@@ -12,14 +12,13 @@ class Parser {
     }
 
     parseLine(line) {
-        line = line.replaceAll(" ", "");
-        var cmd = line.substring(0, 2);
+        var cmd = line.substring(0, 2).toUpperCase();
         var arg = line.substring(2);
 
         if(cmd == null || !this.commandHash[cmd]) {
             return null;
         }
-        if(this.commandHash[cmd](arg)) {
+        if(this.commandHash[cmd]) {
             var current = {};
             current.cmd = cmd;
             current.arg = arg;
@@ -33,11 +32,14 @@ class Parser {
         var lines = commands.split("\n");
         var n = 0;
         lines.forEach(l => {
-            var cmd = this.parseLine(l);
-            if(cmd == null) {
-                errors[errors.length] = n;
+            l = l.replace(/ /g, "");
+            if(l.length > 0) {
+                var cmd = this.parseLine(l);
+                if(cmd == null) {
+                    errors[errors.length] = n;
+                }
+                n ++;
             }
-            n ++;
         });
         return errors;
     }
@@ -46,9 +48,12 @@ class Parser {
         var array = [];
         var lines = commands.split("\n");
         lines.forEach(l => {
-            var cmd = this.parseLine(l);
-            if(cmd != null) {
-                array[array.length] = cmd;
+            l = l.replace(/ /g, "");
+            if(l.length > 0) {
+                var cmd = this.parseLine(l);
+                if(cmd != null) {
+                    array[array.length] = cmd;
+                }
             }
         });
         return array;
@@ -58,11 +63,6 @@ class Parser {
 
 class Command {
     constructor(hal) {
-        this.colors = [
-        "aqua", "black", "blue", "fuchsia",
-        "gray", "green", "lime", "maroon",
-        "navy", "olive", "purple", "red",
-        "silver", "teal", "white", "yellow"];
 
         this.commandTemplate = [
                    {cmd: "FD", ck: this.isNumeric, runner: this.INNER_FD},
@@ -70,14 +70,15 @@ class Command {
                    {cmd: "LT", ck: this.isNumeric, runner: this.INNER_LT},
                    {cmd: "RT", ck: this.isNumeric, runner: this.INNER_RT},
                    {cmd: "CO", ck: this.isColor, runner: this.INNER_CO},
-                   {cmd: "SW", ck: this.isLineWidth, runner: this.INNER_SW}];
+                   {cmd: "SW", ck: this.isLineWidth, runner: this.INNER_SW},
+                   {cmd: "JP", ck: this.isNumeric, runner: this.INNER_JP}];
 
         this.parser = new Parser(this.commandTemplate);
         this.runnerHash = {};
         this.hal = hal;
         this.commandIndex = 0;
         this.parsedCommandArray = [];
-        this.commandInterval = 800;
+        this.commandInterval = 100;
 
         this.init();
     }
@@ -136,8 +137,13 @@ class Command {
     }
 
     isColor(str) {
+        var colors = [
+        "aqua", "black", "blue", "fuchsia",
+        "gray", "green", "lime", "maroon",
+        "navy", "olive", "purple", "red",
+        "silver", "teal", "white", "yellow", "orange", "pink"];
         var hash = {};
-        this.colors.forEach(c => {
+        colors.forEach(c => {
             hash[c] = true;
         });
         if(hash[str]) {
@@ -147,9 +153,13 @@ class Command {
     }
 
     isLineWidth(str) {
-        if(!isNumeric(str))
+        try {
+            return parseInt(str) <= 4 && parseInt(str) >= 0;
+        }
+        catch(ex) {
+            console.log(ex);
             return false;
-        return parseInt(str) <= 4 && parseInt(str) >= 0;
+        }
     }
 
     /**
@@ -178,4 +188,9 @@ class Command {
     INNER_SW(thiz, arg, cb) {
         thiz.hal.__sw__(arg, cb);
     }
+
+    INNER_JP(thiz, arg, cb) {
+        thiz.hal.__jp__(arg, cb);
+    }
+
 }

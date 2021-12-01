@@ -103,7 +103,7 @@ class Paint {
         Line attribute functions
     */
     setLineWidth(lineWidth) {
-        this.context.lineWidth = lineWidth;
+        this.context.lineWidth = this.defaultLineWidths[lineWidth];
     }
 
     setLineColor(color) {

@@ -16,9 +16,9 @@
             <canvas id="canvas" style="position: absolute; left: 0; top: 0; z-index: 0;width:100%; height:100%"></canvas>
             <canvas id="canvas_car" style="position: absolute; left: 0; top: 0; z-index: 1; width:100%; height:100%"></canvas>
         </th>
-        <th style="width:100%; height:100%; border: 1px solid blue; text-align:left">
-            <textarea id="textarea1" style="width:100%; height:720px"></textarea>
-            <button id="run_button" style="width:100%; height:20px" onClick="run()">RUN</button>
+        <th style="width:100%; height:100%; border: 1px solid blue; text-align:left; vertical-align:top">
+            <textarea id="textarea1" style="width:100%; height:500px"></textarea>
+            <button id="run_button" style="width:100%;font-size:2vw" onClick="run()">RUN</button>
         </th>
     </tr>
 </table>
@@ -29,7 +29,7 @@ var cookieName = "kenan_program";
 function getCookie(cname) {
   var name = cname + "=";
   var decodedCookie = decodeURIComponent(document.cookie);
-  var ca = decodedCookie.split(';');
+  var ca = decodedCookie.split(',');
   for(var i = 0; i <ca.length; i++) {
     var c = ca[i];
     while (c.charAt(0) == ' ') {
@@ -63,8 +63,10 @@ var editor = CodeMirror.fromTextArea(document.getElementById("textarea1"), {
 });
 var theme = "colorforth";
 editor.setOption("theme", theme);
-editor.setSize(500, canvas.height - 20);
-editor.setValue(getCookie(cookieName))
+editor.setSize(500, canvas.height - 100);
+var cookie = getCookie(cookieName);
+if(cookie != null && cookie.length > 0)
+    editor.setValue(atob(cookie));
 
 var ctx1 = canvas.getContext("2d");
 ctx1.fillStyle="black";
@@ -92,17 +94,18 @@ function run() {
     var d = new Date();
     d.setTime(d.getTime() + (expireDays * 24 * 60 * 60 * 1000));
     var expires = "expires="+ d.toUTCString();
-    document.cookie = cookieName + "=" + commands + ";" + expires + ";path=/;samesite=none;secure=true";
+    var cookie = cookieName + "=" + btoa(commands) + "," + expires + ",path=/,samesite=none,secure=true";
+    document.cookie = cookie;
 
     paint.reset(cursor);
     cmds.reset();
     var errors = cmds.checkCommand(commands);
-    if(errors.length == 0) {
+//    if(errors.length == 0) {
         button.disabled = true;
         cmds.runCommands(commands, function() {
             button.disabled = false;
         });
-    }
+//    }
 }
 
 

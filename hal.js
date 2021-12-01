@@ -2,8 +2,9 @@ class Hal_Animation {
     constructor(paint, cursor) {
         this.paint = paint;
         this.cursor = cursor;
-        this.pace = 5;
-        this.paceAngle = 0.1;
+        this.pace = 15;
+        this.paceAngle = 0.2;
+        this.jumpPace = 15;
         this.currentFrame = 0;
         this.allFrame = 0;
         this.compensation = 0;
@@ -14,6 +15,7 @@ class Hal_Animation {
         this.currentFrame = 0;
         this.allFrame = Math.floor(distance / this.pace) + 1;
         this.compensation = distance % this.pace;
+        console.log(this.allFrame, this.compensation);
     }
 
     prepareFrameAngle(angle) {
@@ -78,6 +80,23 @@ class Hal_Animation {
             thiz.paint.drawCursor(thiz.cursor);
         }, cb);
     }
+    
+    __ani_jp__(arg, cb) {
+        this.prepareFramesLine(arg);
+        this.startFrames(function(thiz, cf, af) {
+            if(thiz.currentFrame == thiz.allFrame - 1) {
+                thiz.cursor.setSpeed(thiz.compensation);
+            }
+            else {
+                thiz.cursor.setSpeed(thiz.jumpPace);
+            }
+            var fx = thiz.cursor.x; var fy = thiz.cursor.y;
+            thiz.cursor.moveForward();
+            var tx = thiz.cursor.x; var ty = thiz.cursor.y;
+
+            thiz.paint.drawCursor(thiz.cursor);
+        }, cb);
+    }
 
     __ani_lt__(arg, cb) {
         this.prepareFrameAngle(arg);
@@ -129,12 +148,15 @@ class Hal {
     }
 
     __co__(arg, cb) {
-        this.paint.setLineColor(arg);
+        this.paint.setLineColor(arg.toLowerCase());
         cb();
     }
 
     __sw__(arg, cb) {
         this.paint.setLineWidth(arg);
         cb();
+    }
+    __jp__(arg, cb) {
+        this.hal_animation.__ani_jp__(arg, cb);
     }
 }
