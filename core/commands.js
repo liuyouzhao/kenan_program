@@ -1,69 +1,8 @@
-class Parser {
-    constructor(commandTemplate) {
-        this.commandHash = this.loadCommandTemplate(commandTemplate);
-    }
-
-    loadCommandTemplate(ct) {
-        var hash = {};
-        ct.forEach(c => {
-            hash[c.cmd] = c.ck;
-        });
-        return hash;
-    }
-
-    parseLine(line) {
-        var cmd = line.substring(0, 2).toUpperCase();
-        var arg = line.substring(2);
-
-        if(cmd == null || !this.commandHash[cmd]) {
-            return null;
-        }
-        if(this.commandHash[cmd]) {
-            var current = {};
-            current.cmd = cmd;
-            current.arg = arg;
-            return current;
-        }
-        return null;
-    }
-
-    check(commands) {
-        var errors = [];
-        var lines = commands.split("\n");
-        var n = 0;
-        lines.forEach(l => {
-            l = l.replace(/ /g, "");
-            if(l.length > 0) {
-                var cmd = this.parseLine(l);
-                if(cmd == null) {
-                    errors[errors.length] = n;
-                }
-                n ++;
-            }
-        });
-        return errors;
-    }
-
-    parse(commands) {
-        var array = [];
-        var lines = commands.split("\n");
-        lines.forEach(l => {
-            l = l.replace(/ /g, "");
-            if(l.length > 0) {
-                var cmd = this.parseLine(l);
-                if(cmd != null) {
-                    array[array.length] = cmd;
-                }
-            }
-        });
-        return array;
-    }
-}
-
+DEFAULT_COMMAND_INTERVAL = 100;
 
 class Command {
     constructor(hal) {
-
+		this.logic = new Logic();
         this.commandTemplate = [
                    {cmd: "FD", ck: this.isNumeric, runner: this.INNER_FD},
                    {cmd: "BK", ck: this.isNumeric, runner: this.INNER_BK},
@@ -71,15 +10,18 @@ class Command {
                    {cmd: "RT", ck: this.isNumeric, runner: this.INNER_RT},
                    {cmd: "CO", ck: this.isColor, runner: this.INNER_CO},
                    {cmd: "SW", ck: this.isLineWidth, runner: this.INNER_SW},
-                   {cmd: "JP", ck: this.isNumeric, runner: this.INNER_JP}];
+                   {cmd: "JP", ck: this.isNumeric, runner: this.INNER_JP},
+                   {cmd: "LOOP", ck: null, runner: this.INNER_LOOP},
+                   {cmd: "END", ck: null, runner: this.INNER_END},
+                   {cmd: "BRK", ck: null, runner: this.INNER_BRK},
+                   {cmd: "SLEEP", ck: this.isNumeric, runner: this.INNER_SLEEP}];
 
         this.parser = new Parser(this.commandTemplate);
         this.runnerHash = {};
         this.hal = hal;
         this.commandIndex = 0;
         this.parsedCommandArray = [];
-        this.commandInterval = 100;
-
+        this.commandInterval = DEFAULT_COMMAND_INTERVAL;
         this.init();
     }
 
@@ -92,21 +34,14 @@ class Command {
         window.addEventListener("message", function(event) {
             var message = event.data;
             if(message == "run_command") {
+            	thiz.commandInterval = DEFAULT_COMMAND_INTERVAL;
                 if(thiz.commandIndex == thiz.parsedCommandArray.length) {
                     window.postMessage("all_over", '*');
                     return;
                 }
                 console.log(message, thiz.commandIndex, thiz.parsedCommandArray)
                 var currentCommand = thiz.parsedCommandArray[thiz.commandIndex];
-                thiz.runnerHash[currentCommand.cmd](thiz, currentCommand.arg, function() {
-                    window.postMessage("command_finished", '*');
-                });
-            }
-            else if(message == "command_finished") {
-                window.setTimeout(function() {
-                    thiz.commandIndex ++;
-                    window.postMessage("run_command", '*');
-                }, thiz.commandInterval);
+                thiz.runnerHash[currentCommand.cmd](thiz, currentCommand.args);
             }
             else if(message == "all_over") {
                 if(thiz.overCallback)
@@ -118,6 +53,22 @@ class Command {
     reset() {
         this.commandIndex = 0;
         this.parsedCommandArray = [];
+        this.logic = new Logic();
+    }
+    
+    goto(index) {
+    	this.commandIndex = index;
+    	window.postMessage("run_command", '*');
+    }
+    
+    next() {
+    	this.commandIndex ++;
+    	return this.parsedCommandArray[this.commandIndex];
+    }
+    
+    runNext() {
+    	this.commandIndex ++;
+    	window.postMessage("run_command", '*');
     }
 
     checkCommand(commands) {
@@ -127,6 +78,11 @@ class Command {
     runCommands(commands, overCallback) {
         this.parsedCommandArray = this.parser.parse(commands);
         this.overCallback = overCallback;
+        
+        if(!this.logic.validateLogicScope(this.parsedCommandArray)) {
+        	throw "Logic Commands Error";
+        }
+        
         window.postMessage("run_command", '*');
     }
 
@@ -165,32 +121,63 @@ class Command {
     /**
         COMMAND EXECUTOR
     */
-    INNER_FD(thiz, arg, cb) {
-        thiz.hal.__fd__(arg, cb);
+    INNER_FD(thiz, args) {
+        thiz.hal.__fd__(args[0], function() {
+        	thiz.runNext();
+        });
     }
 
-    INNER_BK(thiz, arg, cb) {
-        thiz.hal.__bk__(arg, cb);
+    INNER_BK(thiz, args) {
+        thiz.hal.__bk__(args[0], function() {
+        	thiz.runNext();
+        });
     }
 
-    INNER_LT(thiz, arg, cb) {
-        thiz.hal.__lt__(arg, cb);
+    INNER_LT(thiz, args) {
+        thiz.hal.__lt__(args[0], function() {
+        	thiz.runNext();
+        });
     }
 
-    INNER_RT(thiz, arg, cb) {
-        thiz.hal.__rt__(arg, cb);
+    INNER_RT(thiz, args) {
+        thiz.hal.__rt__(args[0], function() {
+        	thiz.runNext();
+        });
     }
 
-    INNER_CO(thiz, arg, cb) {
-        thiz.hal.__co__(arg, cb);
+    INNER_CO(thiz, args) {
+        thiz.hal.__co__(args[0], function() {
+        	thiz.runNext();
+        });
     }
 
-    INNER_SW(thiz, arg, cb) {
-        thiz.hal.__sw__(arg, cb);
+    INNER_SW(thiz, args) {
+        thiz.hal.__sw__(args[0], function() {
+        	thiz.runNext();
+        });
     }
 
-    INNER_JP(thiz, arg, cb) {
-        thiz.hal.__jp__(arg, cb);
+    INNER_JP(thiz, args) {
+        thiz.hal.__jp__(args[0], function() {
+        	thiz.runNext();
+        });
     }
-
+    
+    INNER_LOOP(thiz, args) {
+    	thiz.logic.stepIn(thiz.commandIndex, thiz.parsedCommandArray);
+    	thiz.runNext();
+    }
+    
+    INNER_END(thiz, args, cb) {
+    	thiz.goto(thiz.logic.getBeginIndex());
+    }
+    
+    INNER_BRK(thiz, args, cb) {
+    	thiz.goto(thiz.logic.stepOut() + 1);
+    }
+    
+    INNER_SLEEP(thiz, args, cb) {
+    	thiz.commandInterval = DEFAULT_COMMAND_INTERVAL + args[0];
+    	cb();
+    }
 }

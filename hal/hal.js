@@ -1,3 +1,5 @@
+ANIMATION_FRAME_INTERVAL = 50;
+
 class Hal_Animation {
     constructor(paint, cursor) {
         this.paint = paint;
@@ -42,7 +44,7 @@ class Hal_Animation {
                 window.clearInterval(interval);
             }
 
-        }, 20);
+        }, ANIMATION_FRAME_INTERVAL);
     }
 
     __ani_fd__(arg, cb) {
