@@ -14,14 +14,14 @@ class Command {
                    {cmd: "LOOP", ck: null, runner: this.INNER_LOOP},
                    {cmd: "END", ck: null, runner: this.INNER_END},
                    {cmd: "BRK", ck: null, runner: this.INNER_BRK},
-                   {cmd: "SLEEP", ck: this.isNumeric, runner: this.INNER_SLEEP}];
+                   {cmd: "SLEEP", ck: this.isNumeric, runner: this.INNER_SLEEP},
+                   {cmd: "SPEED", ck: this.isNumeric, runner: this.INNER_SPEED}];
 
         this.parser = new Parser(this.commandTemplate);
         this.runnerHash = {};
         this.hal = hal;
         this.commandIndex = 0;
         this.parsedCommandArray = [];
-        this.commandInterval = DEFAULT_COMMAND_INTERVAL;
         this.init();
     }
 
@@ -34,7 +34,6 @@ class Command {
         window.addEventListener("message", function(event) {
             var message = event.data;
             if(message == "run_command") {
-            	thiz.commandInterval = DEFAULT_COMMAND_INTERVAL;
                 if(thiz.commandIndex == thiz.parsedCommandArray.length) {
                     window.postMessage("all_over", '*');
                     return;
@@ -69,6 +68,13 @@ class Command {
     runNext() {
     	this.commandIndex ++;
     	window.postMessage("run_command", '*');
+    }
+    
+    runNextDelay(ms) {
+    	this.commandIndex ++;
+    	window.setTimeout(function() {
+    		window.postMessage("run_command", '*');
+    	}, ms);
     }
 
     checkCommand(commands) {
@@ -164,12 +170,18 @@ class Command {
     }
     
     INNER_LOOP(thiz, args) {
-    	thiz.logic.stepIn(thiz.commandIndex, thiz.parsedCommandArray);
+    	thiz.logic.stepIn(thiz.commandIndex, thiz.parsedCommandArray, args);
     	thiz.runNext();
     }
     
     INNER_END(thiz, args, cb) {
-    	thiz.goto(thiz.logic.getBeginIndex());
+		var ended = thiz.logic.consumeScope();
+		if(ended) {
+			thiz.goto(thiz.logic.stepOut() + 1);
+		}
+		else {
+			thiz.goto(thiz.logic.getBeginIndex());
+		}
     }
     
     INNER_BRK(thiz, args, cb) {
@@ -177,7 +189,12 @@ class Command {
     }
     
     INNER_SLEEP(thiz, args, cb) {
-    	thiz.commandInterval = DEFAULT_COMMAND_INTERVAL + args[0];
-    	cb();
+    	thiz.runNextDelay(args[0]);
+    }
+    
+    INNER_SPEED(thiz, args, cb) {
+    	thiz.hal.__speed__(args[0], function() {
+    		thiz.runNext();
+    	})
     }
 }

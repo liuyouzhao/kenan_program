@@ -35,7 +35,7 @@ class Parser {
 		}
 		
 		for (var i = 0; i < args.length; i ++) {
-			if(Number(args[i]) != NaN) {
+			if(!isNaN(args[i])) {
 				args[i] = Number(args[i]);
 			}
 		}
@@ -83,14 +83,28 @@ class Parser {
         var n = 0;
         lines.forEach(l => {
             if(l.length > 0) {
-                var cmd = this.parseLine(l);
-                if(cmd == null) {
-                    errors[errors.length] = n;
-                }
-                n ++;
+            	l = this.removeSpaceHeader(l);
+            	if(l != null) {
+	                var cmd = this.parseLine(l);
+		            if(cmd == null) {
+		                errors[errors.length] = n;
+		            }
+		            n ++;
+            	}
+
             }
         });
         return errors;
+    }
+    
+    removeSpaceHeader(line) {
+		for (var i = 0; i < line.length; i++) {
+			var ch = line.charAt(i);
+			if(ch != " " && ch != "\t") {
+				return line.substring(i);
+			}
+		}
+		return null;
     }
 
     parse(commands) {
@@ -98,10 +112,13 @@ class Parser {
         var lines = commands.split("\n");
         lines.forEach(l => {
             if(l.length > 0) {
-                var cmd = this.parseLine(l);
-                if(cmd != null) {
-                    array[array.length] = cmd;
-                }
+            	l = this.removeSpaceHeader(l);
+            	if(l != null) {
+	                var cmd = this.parseLine(l);
+		            if(cmd != null) {
+		                array[array.length] = cmd;
+		            }
+            	}
             }
         });
         return array;

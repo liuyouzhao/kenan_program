@@ -10,7 +10,9 @@ class Logic {
     	this.rightValues = {	
         	"END" : true		
         };
+        
         this.currentScope = null;
+        this.scopeFactory = new ScopeFactory();
     }
     
     isLeft(cmd) {
@@ -38,13 +40,13 @@ class Logic {
 		return top == 0;
 	}
 
-    stepIn(index, commands) {
+    stepIn(index, commands, args) {
     
     	if(this.currentScope && this.currentScope.begin == index) {
     		return;
     	}
     
-    	var scope = new Scope(commands[i], index, UNKNOWN);
+    	var scope = this.scopeFactory.build(commands[index].cmd, index, UNKNOWN, args);
     	var top = 0;
     	
     	for(var i = index; i < commands.length; i ++) {
@@ -68,6 +70,12 @@ class Logic {
     
     stepOut() {
     	var popped = this.scopeStacks.pop();
+    	if(this.scopeStacks.length == 0) {
+    		this.currentScope = null;
+    	}
+    	else {
+    		this.currentScope = this.scopeStacks[this.scopeStacks.length - 1];
+    	}
     	return popped.end;
     }
     
@@ -77,7 +85,11 @@ class Logic {
     
     getBeginIndex() {
     	return this.currentScope.begin;
-    }  
+    }
+    
+    consumeScope() {
+    	return this.currentScope.tick();
+    }
     
     clear() {
     	this.logicStack = [];

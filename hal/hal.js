@@ -10,6 +10,7 @@ class Hal_Animation {
         this.currentFrame = 0;
         this.allFrame = 0;
         this.compensation = 0;
+        this.speed = 1000 / ANIMATION_FRAME_INTERVAL;
     }
 
     prepareFramesLine(distance) {
@@ -44,7 +45,7 @@ class Hal_Animation {
                 window.clearInterval(interval);
             }
 
-        }, ANIMATION_FRAME_INTERVAL);
+        }, 1000 / this.speed);
     }
 
     __ani_fd__(arg, cb) {
@@ -124,6 +125,11 @@ class Hal_Animation {
             thiz.paint.drawCursor(thiz.cursor);
         }, cb);
     }
+    
+    __ani_speed__(arg, cb) {
+    	this.speed = arg;
+    	cb();
+    }
 }
 
 class Hal {
@@ -160,5 +166,8 @@ class Hal {
     }
     __jp__(arg, cb) {
         this.hal_animation.__ani_jp__(arg, cb);
+    }
+    __speed__(arg, cb) {
+    	this.hal_animation.__ani_speed__(arg, cb);
     }
 }
