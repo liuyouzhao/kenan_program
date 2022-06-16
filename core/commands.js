@@ -4,23 +4,25 @@ class Command {
     constructor(hal) {
 		this.logic = new Logic();
         this.commandTemplate = [
-                   {cmd: "FD", ck: this.isNumeric, runner: this.INNER_FD},
-                   {cmd: "BK", ck: this.isNumeric, runner: this.INNER_BK},
-                   {cmd: "LT", ck: this.isNumeric, runner: this.INNER_LT},
-                   {cmd: "RT", ck: this.isNumeric, runner: this.INNER_RT},
-                   {cmd: "CO", ck: this.isColor, runner: this.INNER_CO},
-                   {cmd: "SW", ck: this.isLineWidth, runner: this.INNER_SW},
-                   {cmd: "JP", ck: this.isNumeric, runner: this.INNER_JP},
-                   {cmd: "LOOP", ck: null, runner: this.INNER_LOOP},
-                   {cmd: "END", ck: null, runner: this.INNER_END},
-                   {cmd: "BRK", ck: null, runner: this.INNER_BRK},
-                   {cmd: "SLEEP", ck: this.isNumeric, runner: this.INNER_SLEEP},
-                   {cmd: "SPEED", ck: this.isNumeric, runner: this.INNER_SPEED}];
-
+                   {cmd: "FD", ckr: [this.isNumeric], runner: this.INNER_FD},
+                   {cmd: "BK", ckr: [this.isNumeric], runner: this.INNER_BK},
+                   {cmd: "LT", ckr: [this.isNumeric], runner: this.INNER_LT},
+                   {cmd: "RT", ckr: [this.isNumeric], runner: this.INNER_RT},
+                   {cmd: "CO", ckr: [this.isColor], runner: this.INNER_CO},
+                   {cmd: "SW", ckr: [this.isLineWidth], runner: this.INNER_SW},
+                   {cmd: "JP", ckr: [this.isNumeric], runner: this.INNER_JP},
+                   {cmd: "LOOP", ckr: [this.isNumericOrNull], runner: this.INNER_LOOP},
+                   {cmd: "END", ckr: [], runner: this.INNER_END},
+                   {cmd: "BRK", ckr: [], runner: this.INNER_BRK},
+                   {cmd: "SLEEP", ckr: [this.isNumeric], runner: this.INNER_SLEEP},
+                   {cmd: "SPEED", ckr: [this.isNumeric], runner: this.INNER_SPEED}];
+		
         this.parser = new Parser(this.commandTemplate);
         this.runnerHash = {};
+        this.checkerHash = {};
         this.hal = hal;
         this.commandIndex = 0;
+        this.rawCommandArray = [];
         this.parsedCommandArray = [];
         this.init();
     }
@@ -28,6 +30,7 @@ class Command {
     init() {
         this.commandTemplate.forEach(ct => {
             this.runnerHash[ct.cmd] = ct.runner;
+            this.checkerHash[ct.cmd] = ct.ckr;
         });
 
         var thiz = this;
@@ -76,39 +79,96 @@ class Command {
     		window.postMessage("run_command", '*');
     	}, ms);
     }
-
-    checkCommand(commands) {
-        return this.parser.check(commands);
+        
+    removeComments(rawCommands) {
+    	var result = "";
+    	for( var i = 0; i < rawCommands.length - 1; i ++ ) {
+    		// match /*
+    		if(rawCommands.charAt(i) == '/') {
+    			if(rawCommands.charAt(i + 1) == '*') {
+    				var j = i + 2;
+	    			for( ; j < rawCommands.length - 1; j ++ ) {
+						if(rawCommands.charAt(j) == '*' && rawCommands.charAt(j + 1) == '/') {
+							break;
+						}
+						if(rawCommands.charAt(j) == '\n') {
+							result = result + '\n';
+						}
+    				}
+    				i = j + 1;
+    			}
+    			else if (rawCommands.charAt(i + 1) == '/') {
+    				var j = i + 2;
+    				for( ; j < rawCommands.length - 1; j ++ ) {
+    					if(rawCommands.charAt(j) == '\n') {
+    						break;
+    					}
+    				}
+    				result = result + '\n';
+    				i = j;
+    			}
+    		}
+			else {
+				result = result + rawCommands.charAt(i); 
+			}
+    	}
+    	return result;
     }
 
-    runCommands(commands, overCallback) {
+    compile(commands) {
+   
+		/* replace comments */
+		commands = this.removeComments(commands);
+		
+		console.log(commands);
+		
+    	/* Command name check */
+    	var errors = this.parser.check(commands);
         this.parsedCommandArray = this.parser.parse(commands);
-        this.overCallback = overCallback;
         
-        if(!this.logic.validateLogicScope(this.parsedCommandArray)) {
-        	throw "Logic Commands Error";
+        /* Command arguments check */
+        let ct = this.checkerHash;
+        this.parsedCommandArray.forEach(cmd => {
+    		var i = 0;
+        	ct[cmd.cmd].forEach(ck => {
+        		if(!ck(cmd.args[i++])) {
+        			errors.push(new CodeError(cmd.line - 1, "arguments check fail: " + ck))
+        		}
+        	})
+        })
+        
+    	var logicError = this.logic.validateLogicScope(this.parsedCommandArray);
+        if(logicError != null) {
+        	errors.push(logicError);
         }
-        
+        return errors;
+    }
+
+    run(commands, overCallback) {
+        this.overCallback = overCallback;
         window.postMessage("run_command", '*');
     }
 
     isNumeric(str) {
-        if (typeof str != "string") return false // we only process strings!
         return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
              !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
     }
-
+    
+    isNumericOrNull(str) {
+    	if(str == null)
+    		return true;
+        return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+             !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+    }
+    
     isColor(str) {
-        var colors = [
-        "aqua", "black", "blue", "fuchsia",
-        "gray", "green", "lime", "maroon",
-        "navy", "olive", "purple", "red",
-        "silver", "teal", "white", "yellow", "orange", "pink"];
-        var hash = {};
-        colors.forEach(c => {
-            hash[c] = true;
-        });
-        if(hash[str]) {
+        var colors = {
+        "aqua":1, "black":1, "blue":1, "fuchsia":1,
+        "gray":1, "green":1, "lime":1, "maroon":1,
+        "navy":1, "olive":1, "purple":1, "red":1,
+        "silver":1, "teal":1, "white":1, "yellow":1, "orange":1, "pink":1};
+
+        if(colors[str.toLowerCase()] == 1) {
             return true;
         }
         return false;

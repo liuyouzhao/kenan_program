@@ -1,6 +1,7 @@
 class Parser {
     constructor(commandTemplate) {
         this.commandHash = this.loadCommandTemplate(commandTemplate);
+        this.inComment = false;
     }
 
     loadCommandTemplate(ct) {
@@ -76,22 +77,21 @@ class Parser {
         }
         return null;
     }
-
+    
     check(commands) {
         var errors = [];
         var lines = commands.split("\n");
-        var n = 0;
+        var lineNumber = 0;
         lines.forEach(l => {
+        	lineNumber ++;
             if(l.length > 0) {
             	l = this.removeSpaceHeader(l);
             	if(l != null) {
 	                var cmd = this.parseLine(l);
 		            if(cmd == null) {
-		                errors[errors.length] = n;
+		                errors[errors.length] = new CodeError(lineNumber - 1, "command cannot be parsed");
 		            }
-		            n ++;
             	}
-
             }
         });
         return errors;
@@ -110,12 +110,18 @@ class Parser {
     parse(commands) {
         var array = [];
         var lines = commands.split("\n");
+        var lineNumber = 0;
         lines.forEach(l => {
+        	lineNumber ++;
             if(l.length > 0) {
             	l = this.removeSpaceHeader(l);
             	if(l != null) {
 	                var cmd = this.parseLine(l);
-		            if(cmd != null) {
+	             	if(cmd == null) {
+	             		cmd = {line: lineNumber};
+	             	}
+		            else {
+		            	cmd.line = lineNumber;
 		                array[array.length] = cmd;
 		            }
             	}

@@ -31,13 +31,21 @@ class Logic {
     
 	validateLogicScope(commands) {
 		var top = 0;
+		var errorLine = -1;
 		commands.forEach(cmd => {
-			if(this.isLeft(cmd))
+			if(this.isLeft(cmd)) {
 				top ++;
-			else if(this.isRight(cmd))
+				errorLine = cmd.line;
+			}
+			else if(this.isRight(cmd)) {
 				top --;
+				errorLine = cmd.line;
+			}
 		})
-		return top == 0;
+		if(top != 0) {
+			return new CodeError(errorLine - 1, "Logic start and end not match");
+		}
+		return null;
 	}
 
     stepIn(index, commands, args) {

@@ -5,6 +5,8 @@
 <script src="libs/codemirror/mode/javascript/javascript.js"></script>
 <script src="libs/codemirror/addon/selection/active-line.js"></script>
 <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
+<script src="core/code-error.js"></script>
+<script src="core/code-line.js"></script>
 <script src="core/parser.js"></script>
 <script src="core/scope.js"></script>
 <script src="core/commands.js"></script>
@@ -20,7 +22,7 @@
             <canvas id="canvas_car" style="position: absolute; left: 0; top: 0; z-index: 1; width:100%; height:100%"></canvas>
         </th>
         <th style="width:100%; height:100%; border: 1px solid blue; text-align:left; vertical-align:top">
-            <textarea id="textarea1" style="width:100%; height:500px"></textarea>
+            <textarea id="code" style="width:100%; height:500px"></textarea>
             <button id="run_button" style="width:100%;font-size:2vw" onClick="run()">RUN</button>
         </th>
     </tr>
@@ -59,10 +61,11 @@ var canvasCar = document.getElementById("canvas_car");
 setupCanvas(canvas);
 setupCanvas(canvasCar);
 
-var editor = CodeMirror.fromTextArea(document.getElementById("textarea1"), {
+var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
     lineNumbers: true,
     styleActiveLine: true,
-    matchBrackets: true
+    matchBrackets: true,
+    gutters: ["error_gutter", "CodeMirror-linenumbers"]
 });
 var theme = "colorforth";
 editor.setOption("theme", theme);
@@ -98,21 +101,42 @@ function run() {
     d.setTime(d.getTime() + (expireDays * 24 * 60 * 60 * 1000));
     var expires = "expires="+ d.toUTCString();
     var cookie = cookieName + "=" + btoa(commands) + "," + expires + ",path=/,samesite=none,secure=true";
+    
+    editor.clearGutter("error_gutter");
+    
     document.cookie = cookie;
 
     paint.reset(cursor);
     cmds.reset();
-    var errors = cmds.checkCommand(commands);
-//    if(errors.length == 0) {
+    var errors = cmds.compile(commands);
+    if(errors.length == 0) {
         button.disabled = true;
-        cmds.runCommands(commands, function() {
-            button.disabled = false;
-        });
-//    }
+        
+        try {
+            cmds.run(commands, function() {
+            	button.disabled = false;
+        	});
+        }
+        catch (ex) {
+        	
+        }
+
+    }
+    else {
+    	errors.forEach(err => {
+    		editor.setGutterMarker(err.line, "error_gutter", makeMarker());
+    	})
+    }
 	
 	editor.focus();
 }
 
+function makeMarker() {
+  var marker = document.createElement("div");
+  marker.style.color = "#FF0000";
+  marker.innerHTML = "X";
+  return marker;
+}
 
 
 </script>
