@@ -1,18 +1,6 @@
 class Parser {
-    constructor(commandTemplate) {
-        this.commandHash = this.loadCommandTemplate(commandTemplate);
-        this.inComment = false;
-    }
 
-    loadCommandTemplate(ct) {
-        var hash = {};
-        ct.forEach(c => {
-            hash[c.cmd] = true;
-        });
-        return hash;
-    }
-    
-    doParseLine(lineUpperCase) {
+    doParseLine(lineUpperCase, lineNumber) {
     	var cmd = null;
     	var args = [];
     	var argsIndex = 0;
@@ -41,41 +29,15 @@ class Parser {
 			}
 		}
 		
-		var currentCommand = {};
-		currentCommand.cmd = cmd;
-		currentCommand.args = args;
-		return currentCommand;
+		return new CommandLine(lineUpperCase, lineNumber, cmd, args);
     }
     
-    parseLine(line) {
-    	var curCmd = this.doParseLine(line.toUpperCase());
-    	
+    parseLine(line, lineNumber) {
+    	var curCmd = this.doParseLine(line.toUpperCase(), lineNumber);
     	if(curCmd.cmd == null) {
     		return null;
     	}
-        if(this.commandHash[curCmd.cmd]) {
-           	return curCmd;
-        }
-        return null;
-    }
-
-	/* Obsolete */
-    __parseLine(line) {
-    	var lineUpperCase = line.toUpperCase();
-
-        var cmd = line.substring(0, 2).toUpperCase();
-        var arg = line.substring(2);
-
-        if(cmd == null || !this.commandHash[cmd]) {
-            return null;
-        }
-        if(this.commandHash[cmd]) {
-            var current = {};
-            current.cmd = cmd;
-            current.arg = arg;
-            return current;
-        }
-        return null;
+        return curCmd;
     }
     
     check(commands) {
@@ -87,9 +49,9 @@ class Parser {
             if(l.length > 0) {
             	l = this.removeSpaceHeader(l);
             	if(l != null) {
-	                var cmd = this.parseLine(l);
+	                var cmd = this.parseLine(l, lineNumber);
 		            if(cmd == null) {
-		                errors[errors.length] = new CodeError(lineNumber - 1, "command cannot be parsed");
+		                errors[errors.length] = new CodeError(lineNumber, "command cannot be parsed");
 		            }
             	}
             }
@@ -116,14 +78,8 @@ class Parser {
             if(l.length > 0) {
             	l = this.removeSpaceHeader(l);
             	if(l != null) {
-	                var cmd = this.parseLine(l);
-	             	if(cmd == null) {
-	             		cmd = {line: lineNumber};
-	             	}
-		            else {
-		            	cmd.line = lineNumber;
-		                array[array.length] = cmd;
-		            }
+	                var cmd = this.parseLine(l, lineNumber);
+	                array.push(cmd);
             	}
             }
         });

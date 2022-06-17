@@ -1,18 +1,14 @@
 <html>
+<head>
 <link rel="stylesheet" href="libs/codemirror/lib/codemirror.css">
 <link rel="stylesheet" href="libs/codemirror/theme/colorforth.css">
 <script src="libs/codemirror/lib/codemirror.js"></script>
 <script src="libs/codemirror/mode/javascript/javascript.js"></script>
 <script src="libs/codemirror/addon/selection/active-line.js"></script>
 <script src="libs/codemirror/addon/edit/matchbrackets.js"></script>
-<script src="core/code-error.js"></script>
-<script src="core/code-line.js"></script>
-<script src="core/parser.js"></script>
-<script src="core/scope.js"></script>
-<script src="core/commands.js"></script>
-<script src="core/logic.js"></script>
-<script src="hal/hal.js"></script>
-<script src="hal/paint.js"></script>
+<script src="entry-web.js"></script>
+</head>
+
 <body>
 <table style="width:100%; height:100%; border: 1px solid blue">
     <tr style="width:100%; height:100%; border: 1px solid blue">
@@ -27,116 +23,10 @@
         </th>
     </tr>
 </table>
-
 </body>
+
 <script>
-var cookieName = "kenan_program";
-function getCookie(cname) {
-  var name = cname + "=";
-  var decodedCookie = decodeURIComponent(document.cookie);
-  var ca = decodedCookie.split(',');
-  for(var i = 0; i <ca.length; i++) {
-    var c = ca[i];
-    while (c.charAt(0) == ' ') {
-      c = c.substring(1);
-    }
-    if (c.indexOf(name) == 0) {
-      return c.substring(name.length, c.length);
-    }
-  }
-  return "";
-}
 
-function setupCanvas(canvas) {
-  var dpr = window.devicePixelRatio || 1;
-  var rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width * dpr;
-  canvas.height = rect.height * dpr;
-  var ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  return ctx;
-}
-var canvas = document.getElementById("canvas");
-var canvasCar = document.getElementById("canvas_car");
-setupCanvas(canvas);
-setupCanvas(canvasCar);
-
-var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-    lineNumbers: true,
-    styleActiveLine: true,
-    matchBrackets: true,
-    gutters: ["error_gutter", "CodeMirror-linenumbers"]
-});
-var theme = "colorforth";
-editor.setOption("theme", theme);
-editor.setSize(500, canvas.height - 100);
-var cookie = getCookie(cookieName);
-if(cookie != null && cookie.length > 0)
-    editor.setValue(atob(cookie));
-
-var ctx1 = canvas.getContext("2d");
-ctx1.fillStyle="green";
-ctx1.fillRect(0, 0, canvas.width, canvas.height);
-
-
-var ctx = canvasCar.getContext("2d");
-ctx.fillStyle="rgba(0, 0, 200, 0.0)";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-var cursor = new Cursor(canvas.width / 2, canvas.height / 2, 20, 30);
-cursor.setSpeed(5);
-
-var paint = new Paint(canvas, canvasCar, cursor);
-paint.reset(cursor);
-var x = canvas.width / 2;
-var y = canvas.height / 2;
-var dir = 0;
-
-var cmds = new Command(new Hal(paint, cursor));
-var button = document.getElementById("run_button");
-function run() {
-    var commands = editor.getValue();
-    var expireDays = 90;
-    var d = new Date();
-    d.setTime(d.getTime() + (expireDays * 24 * 60 * 60 * 1000));
-    var expires = "expires="+ d.toUTCString();
-    var cookie = cookieName + "=" + btoa(commands) + "," + expires + ",path=/,samesite=none,secure=true";
-    
-    editor.clearGutter("error_gutter");
-    
-    document.cookie = cookie;
-
-    paint.reset(cursor);
-    cmds.reset();
-    var errors = cmds.compile(commands);
-    if(errors.length == 0) {
-        button.disabled = true;
-        
-        try {
-            cmds.run(commands, function() {
-            	button.disabled = false;
-        	});
-        }
-        catch (ex) {
-        	
-        }
-
-    }
-    else {
-    	errors.forEach(err => {
-    		editor.setGutterMarker(err.line, "error_gutter", makeMarker());
-    	})
-    }
-	
-	editor.focus();
-}
-
-function makeMarker() {
-  var marker = document.createElement("div");
-  marker.style.color = "#FF0000";
-  marker.innerHTML = "X";
-  return marker;
-}
 
 
 </script>
