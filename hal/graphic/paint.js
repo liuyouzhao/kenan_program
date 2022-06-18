@@ -96,8 +96,14 @@ class Paint {
             cursor.reset(this.canvasCar.width / 2 - this.cursorOffsetWidth, this.canvasCar.height / 2 - this.cursorOffsetHeight);
             this.drawCursor(cursor);
         }
-
     }
+
+	resetCursor(cursor) {
+        if(cursor) {
+            cursor.reset(this.canvasCar.width / 2 - this.cursorOffsetWidth, this.canvasCar.height / 2 - this.cursorOffsetHeight);
+            this.drawCursor(cursor);
+        }
+	}
 
     /***
         Line attribute functions

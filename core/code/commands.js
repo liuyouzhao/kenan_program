@@ -29,6 +29,7 @@ class Commands {
            "LT": 		{checker: [Utils.isNumeric], 	runner: executor.INNER_LT},
            "RT": 		{checker: [Utils.isNumeric], 	runner: executor.INNER_RT},
        	   "JP": 		{checker: [Utils.isNumeric], 	runner: executor.INNER_JP},
+       	   "RST":		{checker: [], 					runner: executor.INNER_RST},
            "SLEEP": 	{checker: [Utils.isNumeric], 	runner: executor.INNER_SLEEP},
  
            "LOOP": 		{checker: [Utils.isNumericOrNull], runner: executor.INNER_LOOP},
@@ -36,7 +37,7 @@ class Commands {
            "BRK":		{checker: [], 					runner: executor.INNER_BRK},
            
            "CO":		{checker: [Utils.isColor], 		runner: executor.INNER_CO},
-           "LW": 		{checker: [Utils.isLineWidth], 	runner: executor.INNER_SW},
+           "LW": 		{checker: [Utils.isLineWidth], 	runner: executor.INNER_LW},
            "SPEED": 	{checker: [Utils.isNumeric], 	runner: executor.INNER_SPEED}
       	};
 	}

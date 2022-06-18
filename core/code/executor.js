@@ -39,8 +39,7 @@ class CommandExecutor extends LineExecutor {
         });
     }
 
-    INNER_SW(args) {
-    	let ctx = this.ctx;
+    INNER_LW(ctx, args) {
         ctx.hal.__sw__(args[0], function() {
         	ctx.runNext();
         });
@@ -48,6 +47,12 @@ class CommandExecutor extends LineExecutor {
 
     INNER_JP(ctx, args) {
         ctx.hal.__jp__(args[0], function() {
+        	ctx.runNext();
+        });
+    }
+    
+    INNER_RST(ctx, args) {
+        ctx.hal.__rst__(args[0], function() {
         	ctx.runNext();
         });
     }

@@ -39,6 +39,11 @@ class Hal {
     	this.hal_animation.__ani_speed__(arg, cb);
     }
     
+    __rst__(arg, cb) {
+    	this.paint.resetCursor(this.cursor);
+    	cb();
+    }
+    
     getEventTarget() {
     	return this.platform.getEventTarget();
     }
