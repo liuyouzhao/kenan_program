@@ -1,29 +1,14 @@
-class Commands {
-	/* Movement commands */
-	static FORWARD 			= "FD";
-	static BACKWARD 		= "BK";
-	static LEFT_ROTATE 		= "LT";
-	static RIGHT_ROTATE 	= "RT";
-	static JUMP 			= "JP"
-	static SLEEP			= "SLEEP";
-
-	/* Logic commands */
-	static LOGIC_LOOP 		= "LOOP";
-	static LOGIC_END 		= "END";
-	static LOGIC_BREAK 		= "BRK";
+class Blueprint {
+	
+	constructor() {
+		this.BLUEPRINT_V1 = {};	
+		this.BLUEPRINT_V0 = {};	
+		this.selectedBlueprint = this.BLUEPRINT_V1;
+	}
 
 	
-	/* Settings commands */
-	static SET_LINE_COLOR 	= "CO";
-	static SET_LINE_WIDTH 	= "LW";
-	static SET_MOVE_SPEED 	= "SPEED";
-	
-	static BLUEPRINT_V1 = {};	
-	static BLUEPRINT_V0 = {};	
-	static selectedBlueprint = Commands.BLUEPRINT_V1;
-	
-	static init(executor) {
-        Commands.BLUEPRINT_V1 = {
+	init(executor) {
+        this.BLUEPRINT_V1 = {
            "FD": 		{checker: [Utils.isNumeric], 	runner: executor.INNER_FD},
            "BK": 		{checker: [Utils.isNumeric], 	runner: executor.INNER_BK},
            "LT": 		{checker: [Utils.isNumeric], 	runner: executor.INNER_LT},
@@ -42,12 +27,16 @@ class Commands {
       	};
 	}
 	
-	static select(blueprint) {
-		Commands.selectedBlueprint = blueprint;
+	select(blueprint) {
+		this.selectedBlueprint = blueprint;
 	}
 	
-	static isValidCommand(commandName) {
-		if(Commands.selectedBlueprint[commandName]) {
+	get() {
+		return this.selectedBlueprint;
+	}
+	
+	isValidCommand(commandName) {
+		if(this.selectedBlueprint[commandName]) {
 			return true;
 		}
 		return false;

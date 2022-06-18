@@ -18,7 +18,6 @@ class Hal_Animation {
         this.currentFrame = 0;
         this.allFrame = Math.floor(distance / this.pace) + 1;
         this.compensation = distance % this.pace;
-        console.log(this.allFrame, this.compensation);
     }
 
     prepareFrameAngle(angle) {

@@ -77,7 +77,8 @@ function run() {
 
     paint.reset(cursor);
     context.reset();
-    var compiled = Compiler.compile(commands, context.getBlueprint());
+    
+    var compiled = new Compiler().compile(commands, context.getBlueprint());
     if(compiled.errors.length == 0) {
         button.disabled = true;
         

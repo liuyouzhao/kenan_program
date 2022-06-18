@@ -1,6 +1,6 @@
 class Compiler {
 
-    static compile(rawCode, blueprint) {
+    compile(rawCode, blueprint) {
     	let parser = new Parser();
     	let logic = new Logic();
     	
@@ -8,7 +8,7 @@ class Compiler {
     	rawCode = rawCode + "\n"
     	
 		/* replace comments */
-		let pureCode = Compiler.removeComments(rawCode);
+		let pureCode = this.removeComments(rawCode);
 		
     	/* Command name check */
     	let errors = parser.check(pureCode);
@@ -17,11 +17,11 @@ class Compiler {
         /* Command arguments check */
         parsedCommandArray.forEach(cmd => {
     		var i = 0;
-    		if(!Commands.isValidCommand(cmd.cmd)) {
+    		if(!blueprint.isValidCommand(cmd.cmd)) {
     			errors.push(new CodeError(cmd.lineNumber, "Command not valid"));
     		}
     		else {
-	        	blueprint[cmd.cmd].checker.forEach(ck => {
+	        	blueprint.get()[cmd.cmd].checker.forEach(ck => {
 		    		if(!ck(cmd.args[i++])) {
 		    			errors.push(new CodeError(cmd.lineNumber, "arguments check fail: " + ck + " :" + cmd.lineNumber))
 		    		}
@@ -39,7 +39,7 @@ class Compiler {
 		return result;
     }
     
-    static removeComments(rawCommands) {
+    removeComments(rawCommands) {
     	var result = "";
     	for( var i = 0; i < rawCommands.length - 1; i ++ ) {
     		// match /*

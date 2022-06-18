@@ -10,8 +10,9 @@ class Context {
         this.eventHandler = hal.getEventTarget();
         this.init();
         this.hal = hal;
-        Commands.init(this.lineExecutor);
-        Commands.select(Commands.BLUEPRINT_V1);
+        this.blueprint = new Blueprint();
+        this.blueprint.init(this.lineExecutor);
+        this.blueprint.select(this.blueprint.BLUEPRINT_V1);
     }
 
     init() {
@@ -23,9 +24,8 @@ class Context {
                     thiz.eventHandler.postMessage("all_over", '*');
                     return;
                 }
-                console.log(message, thiz.commandIndex, thiz.commands)
                 var currentCommand = thiz.commands[thiz.commandIndex];
-                thiz.lineExecutor.execute(currentCommand, thiz.getBlueprint()[currentCommand.cmd].runner, thiz);
+                thiz.lineExecutor.execute(currentCommand, thiz.getBlueprint().get()[currentCommand.cmd].runner, thiz);
             }
             else if(message == "all_over") {
                 if(thiz.overCallback)
@@ -35,7 +35,7 @@ class Context {
     }
     
     getBlueprint() {
-    	return Commands.selectedBlueprint;
+    	return this.blueprint;
     }
 
     reset() {
