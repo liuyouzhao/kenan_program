@@ -44,6 +44,11 @@ class Hal {
     	cb();
     }
     
+   	
+   	calc_expr_result(expression) {
+   		return this.hal_math.calculateResult(expression);
+   	}
+   	
     getEventTarget() {
     	return this.platform.getEventTarget();
     }

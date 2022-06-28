@@ -15,3 +15,12 @@ class CommandLine extends CodeLine {
 		this.args = args;
 	}
 }
+
+class EquationLine extends CodeLine {
+
+	constructor(rawCode, lineNumber, left, right) {
+		super(rawCode, lineNumber);
+		this.left = left;
+		this.right = right;
+	}
+}

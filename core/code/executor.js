@@ -1,10 +1,37 @@
-class LineExecutor {
-	execute(command, runner, ctx) {
-		runner(ctx, command.args);
+class Executor {
+	constructor() {
+    	this.commands = {};
+	}
+	execute(command, ctx) {
+		this.commands[command.cmd](ctx, command.args);
 	}
 }
 
-class CommandExecutor extends LineExecutor {
+class CommandExecutor extends Executor {
+
+	constructor() {
+		super();
+    	this.commands = {
+           "FD": 			this.INNER_FD,
+           "BK": 			this.INNER_BK,
+           "LT": 			this.INNER_LT,
+           "RT": 			this.INNER_RT,
+       	   "JP": 			this.INNER_JP,
+       	   "RST":			this.INNER_RST,
+           "SLEEP": 		this.INNER_SLEEP,
+ 
+           "LOOP": 			this.INNER_LOOP,
+           "END": 			this.INNER_END,
+           "BRK":			this.INNER_BRK,
+           
+           "CO":			this.INNER_CO,
+           "LW": 			this.INNER_LW,
+           "SPEED": 		this.INNER_SPEED,
+           
+           
+           "__EQUATION__": 	this.__EQUATION__
+      	};
+	}
 
     /**
         COMMAND EXECUTOR

@@ -3,16 +3,14 @@ DEFAULT_COMMAND_INTERVAL = 100;
 class Context {
     constructor(hal) {
 		this.logic = new Logic();
-		this.lineExecutor = new CommandExecutor(this);
+		this.executor = new CommandExecutor(this);
         this.commandIndex = 0;
         this.rawCommandArray = [];
         this.commands = [];
         this.eventHandler = hal.getEventTarget();
         this.init();
         this.hal = hal;
-        this.blueprint = new Blueprint();
-        this.blueprint.init(this.lineExecutor);
-        this.blueprint.select(this.blueprint.BLUEPRINT_V1);
+        this.variables = {};
     }
 
     init() {
@@ -25,7 +23,7 @@ class Context {
                     return;
                 }
                 var currentCommand = thiz.commands[thiz.commandIndex];
-                thiz.lineExecutor.execute(currentCommand, thiz.getBlueprint().get()[currentCommand.cmd].runner, thiz);
+                thiz.executor.execute(currentCommand, thiz);
             }
             else if(message == "all_over") {
                 if(thiz.overCallback)
@@ -34,9 +32,6 @@ class Context {
         }, false);
     }
     
-    getBlueprint() {
-    	return this.blueprint;
-    }
 
     reset() {
         this.commandIndex = 0;

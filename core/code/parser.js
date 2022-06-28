@@ -1,5 +1,10 @@
 class Parser {
 
+	constructor() {
+		this.varCache = {};
+		this.varNames = [];
+	}
+
     doParseLine(lineUpperCase, lineNumber) {
     	var cmd = null;
     	var args = [];
